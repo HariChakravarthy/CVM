@@ -73,8 +73,7 @@ CVM++/
 ├── vm.cpp            # Stack-based bytecode interpreter
 ├── main.cpp          # CLI entry point
 ├── CMakeLists.txt    # CMake build configuration
-├── test.cvm          # Feature test script
-├── interactive_test.cvm  # Interactive I/O test
+├── main.cvm          # Sample CVM++ script
 └── README.md
 ```
 
@@ -106,12 +105,12 @@ cmake --build .
 ### Run a Script
 
 ```bash
-./cvm++ test.cvm
+./cvm++ main.cvm
 ```
 
 On Windows:
 ```powershell
-.\cvm++.exe test.cvm
+.\cvm++.exe main.cvm
 ```
 
 ---
