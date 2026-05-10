@@ -1,0 +1,29 @@
+// ============================================================
+// CVM++ Interactive Test — Tests the INPUT feature
+// ============================================================
+
+// Ask user for a number
+let num = 0;
+print 0;    // signal: "enter a number"
+input num;
+
+// Show the number back
+print num;
+
+// Double it
+let doubled = num * 2;
+print doubled;
+
+// Check if it's positive
+if (num > 0) {
+    print 1;
+} else {
+    print 0;
+}
+
+// Count down from the number to 0
+let i = num;
+while (i >= 0) {
+    print i;
+    i = i - 1;
+}

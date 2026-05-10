@@ -1,0 +1,6 @@
+let num = 0;
+input num;
+while(num){
+    print num;
+    num = num - 1;
+}

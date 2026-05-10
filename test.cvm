@@ -1,0 +1,76 @@
+// ============================================================
+// CVM++ Test Script — Exercises ALL language features
+// Run with:  cvm++ test.cvm
+// ============================================================
+
+// --- 1. Variable declarations (integers) ---
+let x = 10;
+let y = 20;
+let sum = x + y;
+print sum;           // expect: 30
+
+// --- 2. Arithmetic operators ---
+let a = 5 + 3;
+let b = 10 - 2;
+let c = 4 * 3;
+let d = 15 / 3;
+print a;             // expect: 8
+print b;             // expect: 8
+print c;             // expect: 12
+print d;             // expect: 5
+
+// --- 3. Negative numbers (unary minus) ---
+let neg = -42;
+print neg;           // expect: -42
+
+// --- 4. Boolean values ---
+let t = true;
+let f = false;
+print t;             // expect: 1
+print f;             // expect: 0
+
+// --- 5. Comparison operators ---
+let eq  = (10 == 10);
+let neq = (10 != 5);
+let lt  = (3 < 7);
+let gt  = (9 > 2);
+print eq;            // expect: 1
+print neq;           // expect: 1
+print lt;            // expect: 1
+print gt;            // expect: 1
+
+// --- 6. Logical NOT ---
+let notTrue = !true;
+let notFalse = !false;
+print notTrue;       // expect: 0
+print notFalse;      // expect: 1
+
+// --- 7. If / else ---
+if (x == 10) {
+    print 1;         // expect: 1 (condition is true)
+} else {
+    print 0;
+}
+
+if (x == 999) {
+    print 0;
+} else {
+    print 2;         // expect: 2 (else branch)
+}
+
+// --- 8. While loop ---
+let i = 0;
+while (i < 5) {
+    print i;         // expect: 0, 1, 2, 3, 4
+    i = i + 1;
+}
+
+// --- 9. Nested arithmetic & reassignment ---
+let result = (x + y) * 2 - 10 / 5;
+print result;        // expect: (10+20)*2 - 10/5 = 60 - 2 = 58
+
+// --- 10. Input (reads an integer from stdin) ---
+// Uncomment the lines below to test interactive input:
+// print 999;
+// input x;
+// print x;
