@@ -12,6 +12,7 @@ add_executable(cvm++
     parser.cpp
     compiler.cpp
     vm.cpp
+    debug.cpp
 )
 
 # Include current directory for headers

@@ -106,6 +106,7 @@ void VM::execute(const std::vector<uint8_t>& bytecode) {
 
         case OP_LOAD: {
             uint16_t slot = readUint16();
+            if (slot >= globals_.size()) globals_.resize(slot + 1, 0);
             push(globals_[slot]);
             break;
         }
