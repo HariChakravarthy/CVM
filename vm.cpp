@@ -52,15 +52,36 @@ uint16_t VM::readUint16() {
     return value;
 }
 
-// ---- Main execution loop ---------------------------------------------------
+// ---- Public entry points ---------------------------------------------------
 
+// Full reset — used by the file runner
 void VM::execute(const std::vector<uint8_t>& bytecode) {
     code_ = bytecode.data();
     pc_   = 0;
     stack_.clear();
     globals_.clear();
-    globals_.resize(256, 0);  // pre-allocate 256 variable slots
+    globals_.resize(256, 0);
+    runLoop();
+}
 
+// REPL: call once before the loop to set up global storage
+void VM::initGlobals() {
+    globals_.clear();
+    globals_.resize(256, 0);
+}
+
+// REPL: run one chunk; globals persist between calls so variables survive
+void VM::executeChunk(const std::vector<uint8_t>& bytecode) {
+    code_ = bytecode.data();
+    pc_   = 0;
+    stack_.clear();                                   // fresh stack each line
+    if (globals_.size() < 256) globals_.resize(256, 0); // keep existing globals
+    runLoop();
+}
+
+// ---- Shared fetch-decode-execute loop -------------------------------------
+
+void VM::runLoop() {
     while (true) {
         uint8_t instruction = readByte();
 
@@ -142,13 +163,13 @@ void VM::execute(const std::vector<uint8_t>& bytecode) {
 
         case OP_JMP: {
             int32_t target = readInt32();
-            pc_ = static_cast<size_t>(target);      // unconditional jump
+            pc_ = static_cast<size_t>(target);
             break;
         }
         case OP_JMP_IF_FALSE: {
             int32_t target = readInt32();
             int32_t cond   = pop();
-            if (cond == 0) pc_ = static_cast<size_t>(target);  // jump if falsy
+            if (cond == 0) pc_ = static_cast<size_t>(target);
             break;
         }
 

@@ -1,10 +1,9 @@
 // ============================================================================
 // CVM++ Main Entry Point
-// CLI file runner: reads a .cvm script and pipes it through the full pipeline:
-//   Source → Lexer → Tokens → Parser → AST → Compiler → Bytecode → VM
 //
 // Usage:
-//   cvm++ <script.cvm>          — run normally
+//   cvm++                       — launch interactive REPL
+//   cvm++ <script.cvm>          — run a script file normally
 //   cvm++ -d <script.cvm>       — debug mode: print AST + bytecode, then run
 //   cvm++ --debug <script.cvm>  — same as -d
 // ============================================================================
@@ -20,7 +19,8 @@
 #include <sstream>
 #include <string>
 
-// Read an entire file into a string
+// ---- Helpers ---------------------------------------------------------------
+
 static std::string readFile(const std::string& path) {
     std::ifstream file(path);
     if (!file.is_open()) {
@@ -31,9 +31,100 @@ static std::string readFile(const std::string& path) {
     return ss.str();
 }
 
+// ---- REPL ------------------------------------------------------------------
+//
+// How it works:
+//   - Compiler keeps its variable table (vars_ / nextSlot_) across lines via
+//     compileRepl(), so variables declared on one line are visible on the next.
+//   - VM keeps its globals_ array across lines via executeChunk(), so stored
+//     values survive between prompts.
+//   - Each line gets a fresh operand stack (executeChunk clears stack_).
+//   - Errors on one line are caught and printed; the session continues.
+
+static void runRepl() {
+    std::cout << "CVM++ REPL  (type 'exit' or 'quit' to leave)\n";
+    std::cout << "--------------------------------------------\n";
+
+    Compiler compiler;
+    VM       vm;
+    vm.initGlobals();   // set up global storage once
+
+    std::string line;
+    while (true) {
+        std::cout << ">>> ";
+        if (!std::getline(std::cin, line)) break;      // EOF (Ctrl-D / Ctrl-Z)
+
+        // Trim leading/trailing whitespace
+        size_t start = line.find_first_not_of(" \t\r\n");
+        if (start == std::string::npos) continue;      // blank line
+        line = line.substr(start);
+
+        if (line == "exit" || line == "quit") break;
+
+        try {
+            Lexer               lexer(line);
+            std::vector<Token>  tokens = lexer.tokenize();
+
+            Parser              parser(tokens);
+            std::vector<ASTPtr> ast = parser.parse();
+
+            std::vector<uint8_t> bytecode = compiler.compileRepl(ast);
+
+            vm.executeChunk(bytecode);
+
+        } catch (const std::runtime_error& e) {
+            std::cerr << e.what() << "\n";
+            // Session continues — don't exit on error
+        }
+    }
+
+    std::cout << "\nBye!\n";
+}
+
+// ---- File runner -----------------------------------------------------------
+
+static void runFile(const std::string& filename, bool debugMode) {
+    std::string source = readFile(filename);
+
+    if (debugMode) {
+        std::cout << "+======================================+\n";
+        std::cout << "|       CVM++ Debug Mode               |\n";
+        std::cout << "+======================================+\n";
+        std::cout << "File: " << filename << "\n";
+        std::cout << "Source:\n  ";
+        for (char c : source) {
+            std::cout << c;
+            if (c == '\n') std::cout << "  ";
+        }
+        std::cout << "\n";
+    }
+
+    Lexer lexer(source);
+    std::vector<Token> tokens = lexer.tokenize();
+
+    Parser parser(tokens);
+    std::vector<ASTPtr> ast = parser.parse();
+
+    if (debugMode) printAST(ast);
+
+    Compiler compiler;
+    std::vector<uint8_t> bytecode = compiler.compile(ast);
+
+    if (debugMode) {
+        disassemble(bytecode);
+        std::cout << "+======================================+\n";
+        std::cout << "|          Execution Output            |\n";
+        std::cout << "+======================================+\n";
+    }
+
+    VM vm;
+    vm.execute(bytecode);
+}
+
+// ---- Entry point -----------------------------------------------------------
+
 int main(int argc, char* argv[]) {
-    // ---- Parse arguments ----
-    bool debugMode    = false;
+    bool        debugMode = false;
     std::string filename;
 
     for (int i = 1; i < argc; i++) {
@@ -48,61 +139,14 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    // No filename → launch REPL
     if (filename.empty()) {
-        std::cerr << "CVM++ — Stack-Based Virtual Machine\n";
-        std::cerr << "Usage: cvm++ [-d|--debug] <script.cvm>\n";
-        std::cerr << "\n";
-        std::cerr << "  -d, --debug    Print AST and bytecode before execution\n";
-        return 1;
+        runRepl();
+        return 0;
     }
 
     try {
-        // Step 1: Read source file
-        std::string source = readFile(filename);
-
-        if (debugMode) {
-            std::cout << "+======================================+\n";
-            std::cout << "|       CVM++ Debug Mode               |\n";
-            std::cout << "+======================================+\n";
-            std::cout << "File: " << filename << "\n";
-            std::cout << "Source:\n";
-            std::cout << "  " ;
-            for (char c : source) {
-                std::cout << c;
-                if (c == '\n') std::cout << "  ";
-            }
-            std::cout << "\n";
-        }
-
-        // Step 2: Lexer — tokenize the source code
-        Lexer lexer(source);
-        std::vector<Token> tokens = lexer.tokenize();
-
-        // Step 3: Parser — build Abstract Syntax Tree
-        Parser parser(tokens);
-        std::vector<ASTPtr> ast = parser.parse();
-
-        // [DEBUG] Print AST
-        if (debugMode) {
-            printAST(ast);
-        }
-
-        // Step 4: Compiler — emit bytecode from AST
-        Compiler compiler;
-        std::vector<uint8_t> bytecode = compiler.compile(ast);
-
-        // [DEBUG] Disassemble bytecode
-        if (debugMode) {
-            disassemble(bytecode);
-            std::cout << "+======================================+\n";
-            std::cout << "|          Execution Output            |\n";
-            std::cout << "+======================================+\n";
-        }
-
-        // Step 5: VM — execute the bytecode
-        VM vm;
-        vm.execute(bytecode);
-
+        runFile(filename, debugMode);
     } catch (const std::runtime_error& e) {
         std::cerr << e.what() << "\n";
         return 1;
