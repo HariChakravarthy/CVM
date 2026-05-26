@@ -17,7 +17,7 @@ enum class TokenType {
     FALSE_LIT,           // boolean false
 
     // Arithmetic
-    PLUS, MINUS, STAR, SLASH,
+    PLUS, MINUS, STAR, SLASH, PERCENT,  // + - * / %
 
     // Assignment & comparison
     EQUAL,               // =
@@ -29,6 +29,8 @@ enum class TokenType {
 
     // Logical
     BANG,                // !
+    AND_AND,             // &&
+    PIPE_PIPE,           // ||
 
     // Delimiters
     LPAREN, RPAREN,      // ( )

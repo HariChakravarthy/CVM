@@ -8,6 +8,35 @@
 #include <cstring>
 #include <stdexcept>
 
+// ---- Helper: is an AST expression statically boolean? ---------------------
+// Returns true when the expression is guaranteed to produce a bool (0 or 1)
+// so the compiler can emit OP_PRINT_BOOL instead of OP_PRINT.
+static bool isBoolExpr(const ASTPtr& node) {
+    if (!node) return false;
+    switch (node->type) {
+        case NodeType::BOOL_LITERAL:
+            return true;
+        case NodeType::BINARY_EXPR: {
+            auto* bin = static_cast<const BinaryExpr*>(node.get());
+            switch (bin->op) {
+                case BinOp::EQ:  case BinOp::NEQ:
+                case BinOp::LT:  case BinOp::GT:
+                case BinOp::LTE: case BinOp::GTE:
+                case BinOp::AND: case BinOp::OR:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+        case NodeType::UNARY_EXPR: {
+            auto* un = static_cast<const UnaryExpr*>(node.get());
+            return un->op == UnaryOp::NOT;
+        }
+        default:
+            return false;
+    }
+}
+
 Compiler::Compiler() : nextSlot_(0) {}
 
 // ---- Emit helpers ----------------------------------------------------------
@@ -124,7 +153,8 @@ void Compiler::compileNode(const ASTPtr& node) {
     case NodeType::PRINT_STMT: {
         auto* pr = static_cast<PrintStmt*>(node.get());
         compileExpr(pr->expr);
-        emitOpCode(OP_PRINT);
+        // Emit OP_PRINT_BOOL when we can prove the expression is boolean
+        emitOpCode(isBoolExpr(pr->expr) ? OP_PRINT_BOOL : OP_PRINT);
         break;
     }
 
@@ -206,6 +236,32 @@ void Compiler::compileExpr(const ASTPtr& node) {
 
     case NodeType::BINARY_EXPR: {
         auto* bin = static_cast<BinaryExpr*>(node.get());
+
+        // Short-circuit AND: if left is false, skip right, result = 0
+        if (bin->op == BinOp::AND) {
+            compileExpr(bin->left);
+            size_t falseJump = emitJump(OP_JMP_IF_FALSE); // pops left
+            compileExpr(bin->right);
+            size_t endJump = emitJump(OP_JMP);
+            patchJump(falseJump);
+            emitOpCode(OP_CONST); emitInt32(0); // left was false -> result 0
+            patchJump(endJump);
+            break;
+        }
+
+        // Short-circuit OR: if left is true, skip right, result = 1
+        if (bin->op == BinOp::OR) {
+            compileExpr(bin->left);
+            size_t trueJump = emitJump(OP_JMP_IF_TRUE); // pops left
+            compileExpr(bin->right);
+            size_t endJump = emitJump(OP_JMP);
+            patchJump(trueJump);
+            emitOpCode(OP_CONST); emitInt32(1); // left was true -> result 1
+            patchJump(endJump);
+            break;
+        }
+
+        // All other binary ops: compile both sides then emit opcode
         compileExpr(bin->left);
         compileExpr(bin->right);
         switch (bin->op) {
@@ -213,12 +269,14 @@ void Compiler::compileExpr(const ASTPtr& node) {
             case BinOp::SUB: emitOpCode(OP_SUB); break;
             case BinOp::MUL: emitOpCode(OP_MUL); break;
             case BinOp::DIV: emitOpCode(OP_DIV); break;
+            case BinOp::MOD: emitOpCode(OP_MOD); break;
             case BinOp::EQ:  emitOpCode(OP_EQ);  break;
             case BinOp::NEQ: emitOpCode(OP_NEQ); break;
             case BinOp::LT:  emitOpCode(OP_LT);  break;
             case BinOp::GT:  emitOpCode(OP_GT);  break;
             case BinOp::LTE: emitOpCode(OP_LTE); break;
             case BinOp::GTE: emitOpCode(OP_GTE); break;
+            default: break; // AND/OR handled above
         }
         break;
     }

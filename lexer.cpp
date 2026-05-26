@@ -106,6 +106,7 @@ std::vector<Token> Lexer::tokenize() {
             case '-': tokens.push_back(makeToken(TokenType::MINUS,     "-")); break;
             case '*': tokens.push_back(makeToken(TokenType::STAR,      "*")); break;
             case '/': tokens.push_back(makeToken(TokenType::SLASH,     "/")); break;
+            case '%': tokens.push_back(makeToken(TokenType::PERCENT,   "%")); break;
             case '(': tokens.push_back(makeToken(TokenType::LPAREN,    "(")); break;
             case ')': tokens.push_back(makeToken(TokenType::RPAREN,    ")")); break;
             case '{': tokens.push_back(makeToken(TokenType::LBRACE,    "{")); break;
@@ -120,6 +121,18 @@ std::vector<Token> Lexer::tokenize() {
             case '!':
                 if (match('=')) tokens.push_back(makeToken(TokenType::BANG_EQUAL,  "!="));
                 else            tokens.push_back(makeToken(TokenType::BANG,        "!"));
+                break;
+            case '&':
+                if (match('&')) tokens.push_back(makeToken(TokenType::AND_AND,  "&&"));
+                else throw std::runtime_error(
+                    "Lexer error (line " + std::to_string(line_) +
+                    "): use '&&' for logical AND");
+                break;
+            case '|':
+                if (match('|')) tokens.push_back(makeToken(TokenType::PIPE_PIPE, "||"));
+                else throw std::runtime_error(
+                    "Lexer error (line " + std::to_string(line_) +
+                    "): use '||' for logical OR");
                 break;
             case '<':
                 if (match('=')) tokens.push_back(makeToken(TokenType::LESS_EQUAL,    "<="));

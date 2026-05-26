@@ -21,6 +21,7 @@ enum OpCode : uint8_t {
     OP_SUB,
     OP_MUL,
     OP_DIV,
+    OP_MOD,      // remainder (a % b)
 
     OP_EQ,
     OP_NEQ,
@@ -36,10 +37,12 @@ enum OpCode : uint8_t {
     OP_STORE,
 
     OP_PRINT,
+    OP_PRINT_BOOL,  // print "true" / "false" for boolean results
     OP_INPUT,
 
     OP_JMP,
     OP_JMP_IF_FALSE,
+    OP_JMP_IF_TRUE,  // short-circuit for ||
 
     OP_POP,
     OP_HALT

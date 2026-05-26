@@ -108,6 +108,12 @@ void VM::runLoop() {
             push(a / b);
             break;
         }
+        case OP_MOD: {
+            int32_t b = pop(), a = pop();
+            if (b == 0) throw std::runtime_error("VM error: modulo by zero");
+            push(a % b);
+            break;
+        }
 
         // ---- Comparisons ----
 
@@ -146,6 +152,11 @@ void VM::runLoop() {
             std::cout << val << "\n";
             break;
         }
+        case OP_PRINT_BOOL: {
+            int32_t val = pop();
+            std::cout << (val ? "true" : "false") << "\n";
+            break;
+        }
         case OP_INPUT: {
             int32_t val = 0;
             std::cout << ">> ";
@@ -170,6 +181,12 @@ void VM::runLoop() {
             int32_t target = readInt32();
             int32_t cond   = pop();
             if (cond == 0) pc_ = static_cast<size_t>(target);
+            break;
+        }
+        case OP_JMP_IF_TRUE: {
+            int32_t target = readInt32();
+            int32_t cond   = pop();
+            if (cond != 0) pc_ = static_cast<size_t>(target);
             break;
         }
 
