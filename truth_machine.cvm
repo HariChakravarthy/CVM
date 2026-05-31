@@ -1,0 +1,10 @@
+let n = 0;
+input n;
+
+if (n == 0) {
+    print 0;
+} else {
+    while (1) {
+        print 1;
+    }
+}

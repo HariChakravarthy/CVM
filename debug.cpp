@@ -195,6 +195,7 @@ void disassemble(const std::vector<uint8_t>& code) {
         case OP_SUB:   std::cout << "OP_SUB\n";   pc++; break;
         case OP_MUL:   std::cout << "OP_MUL\n";   pc++; break;
         case OP_DIV:   std::cout << "OP_DIV\n";   pc++; break;
+        case OP_MOD:   std::cout << "OP_MOD\n";   pc++; break;
 
         case OP_EQ:    std::cout << "OP_EQ\n";    pc++; break;
         case OP_NEQ:   std::cout << "OP_NEQ\n";   pc++; break;
@@ -216,8 +217,9 @@ void disassemble(const std::vector<uint8_t>& code) {
             std::cout << "OP_STORE             slot=" << slot << "\n";
             pc += 3; break;
         }
-        case OP_PRINT: std::cout << "OP_PRINT\n"; pc++; break;
-        case OP_INPUT: std::cout << "OP_INPUT\n"; pc++; break;
+        case OP_PRINT:      std::cout << "OP_PRINT\n";      pc++; break;
+        case OP_PRINT_BOOL: std::cout << "OP_PRINT_BOOL\n"; pc++; break;
+        case OP_INPUT:      std::cout << "OP_INPUT\n";      pc++; break;
 
         case OP_JMP: {
             int32_t target = readI32(code, pc + 1);
@@ -227,6 +229,11 @@ void disassemble(const std::vector<uint8_t>& code) {
         case OP_JMP_IF_FALSE: {
             int32_t target = readI32(code, pc + 1);
             std::cout << "OP_JMP_IF_FALSE      -> " << target << "\n";
+            pc += 5; break;
+        }
+        case OP_JMP_IF_TRUE: {
+            int32_t target = readI32(code, pc + 1);
+            std::cout << "OP_JMP_IF_TRUE       -> " << target << "\n";
             pc += 5; break;
         }
         case OP_POP:  std::cout << "OP_POP\n";  pc++; break;

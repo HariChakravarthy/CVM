@@ -166,7 +166,31 @@ ASTPtr Parser::block() {
 // ---- Expression parsing (precedence climbing) ------------------------------
 
 ASTPtr Parser::expression() {
-    return equality();
+    return logicOr();
+}
+
+// logicOr → logicAnd ('||' logicAnd)*
+ASTPtr Parser::logicOr() {
+    ASTPtr left = logicAnd();
+    while (check(TokenType::PIPE_PIPE)) {
+        Token op = current(); pos_++;
+        ASTPtr right = logicAnd();
+        left = std::make_unique<BinaryExpr>(
+            BinOp::OR, std::move(left), std::move(right), op.line);
+    }
+    return left;
+}
+
+// logicAnd → equality ('&&' equality)*
+ASTPtr Parser::logicAnd() {
+    ASTPtr left = equality();
+    while (check(TokenType::AND_AND)) {
+        Token op = current(); pos_++;
+        ASTPtr right = equality();
+        left = std::make_unique<BinaryExpr>(
+            BinOp::AND, std::move(left), std::move(right), op.line);
+    }
+    return left;
 }
 
 // equality → comparison (("==" | "!=") comparison)*
@@ -216,13 +240,16 @@ ASTPtr Parser::addition() {
     return left;
 }
 
-// multiplication → unary (("*" | "/") unary)*
+// multiplication → unary (('*' | '/' | '%') unary)*
 ASTPtr Parser::multiplication() {
     ASTPtr left = unary();
-    while (check(TokenType::STAR) || check(TokenType::SLASH)) {
+    while (check(TokenType::STAR) || check(TokenType::SLASH) || check(TokenType::PERCENT)) {
         Token op = current(); pos_++;
         ASTPtr right = unary();
-        BinOp binOp = (op.type == TokenType::STAR) ? BinOp::MUL : BinOp::DIV;
+        BinOp binOp;
+        if      (op.type == TokenType::STAR)    binOp = BinOp::MUL;
+        else if (op.type == TokenType::SLASH)   binOp = BinOp::DIV;
+        else                                    binOp = BinOp::MOD;
         left = std::make_unique<BinaryExpr>(
             binOp, std::move(left), std::move(right), op.line);
     }

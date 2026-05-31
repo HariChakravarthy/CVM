@@ -12,6 +12,7 @@ echo Build successful!
 echo.
 echo Usage:
 echo   cvm++.exe calculator.cvm
+echo   cvm++.exe truth_machine.cvm
 echo   cvm++.exe -d calculator.cvm
 echo.
 cmd /k

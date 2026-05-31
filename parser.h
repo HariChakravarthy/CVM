@@ -20,7 +20,7 @@ enum class NodeType {
 };
 
 // Binary operator kinds
-enum class BinOp { ADD, SUB, MUL, DIV, EQ, NEQ, LT, GT, LTE, GTE };
+enum class BinOp { ADD, SUB, MUL, DIV, MOD, EQ, NEQ, LT, GT, LTE, GTE, AND, OR };
 
 // Unary operator kinds
 enum class UnaryOp { NEG, NOT };
@@ -169,10 +169,12 @@ private:
 
     // Expression rules (lowest to highest precedence)
     ASTPtr expression();
+    ASTPtr logicOr();          // ||  (lowest)
+    ASTPtr logicAnd();         // &&
     ASTPtr equality();
     ASTPtr comparison();
     ASTPtr addition();
-    ASTPtr multiplication();
+    ASTPtr multiplication();   // * / %
     ASTPtr unary();
     ASTPtr primary();
 };
